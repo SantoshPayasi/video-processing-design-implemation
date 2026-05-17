@@ -65,9 +65,3 @@ class Movie {
     private LocalDateTime updatedAt;
 
 }
-
-enum VideoStatus {
-    DRAFT,
-    PUBLISHED,
-    ARCHIVED
-}
