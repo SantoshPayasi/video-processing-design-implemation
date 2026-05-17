@@ -1,0 +1,48 @@
+#!/bin/bash
+  echo "Updating README with Claude..."
+  claude --print "Analyze this project structure and update README.md to reflect any new services, features, or
+  structural changes. Only update sections that have actually changed. Do not rewrite sections that are still
+  accurate."
+  git add README.md
+  git commit -m "docs: auto-update README" --allow-empty-message
+
+  Make it executable:
+  chmod +x .git/hooks/pre-push
+
+  Downside: Only works on your machine, not shared with the team via git (.git/ is not committed).
+
+  ---
+  Option 2: GitHub Actions (Recommended — runs in CI, shared with team)
+
+  Create .github/workflows/update-readme.yml:
+
+  name: Auto-update README
+
+  on:
+    push:
+      branches: [main]
+      paths-ignore:
+        - 'README.md'  # prevent infinite loop
+
+  jobs:
+    update-readme:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Install Claude Code CLI
+          run: npm install -g @anthropic-ai/claude-code
+
+        - name: Update README
+          env:
+            ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          run: |
+            claude --print "Analyze the project structure and update README.md to accurately reflect the current
+  services, features, data models, and architecture. Only update what has changed."
+
+        - name: Commit updated README
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git diff --quiet README.md || (git add README.md && git commit -m "docs: auto-update README [skip ci]")
+            git push
